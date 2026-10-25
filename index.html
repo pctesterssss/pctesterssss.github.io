@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<!-- STATIC-DEPLOY PATCH (not part of upstream Open WebUI):
+		     runs before the application bundle so every API request can be
+		     redirected to a backend hosted somewhere else, including a local
+		     one such as http://localhost:8080 or http://192.168.x.x:8080.
+		     Priority: ?api= query string -> localStorage -> same origin. -->
+		<script>
+			(function () {
+				var KEY = 'owui_api_base';
+				var base = '';
+				try {
+					var fromQuery = new URLSearchParams(location.search).get('api');
+					if (fromQuery !== null) {
+						base = fromQuery.trim().replace(/\/+$/, '');
+						if (base) localStorage.setItem(KEY, base);
+						else localStorage.removeItem(KEY);
+						var clean = location.origin + location.pathname;
+						history.replaceState(null, '', clean + location.hash);
+					} else {
+						base = (localStorage.getItem(KEY) || '').replace(/\/+$/, '');
+					}
+				} catch (e) {
+					base = '';
+				}
+				window.__OWUI_API_BASE__ = base;
+				window.__OWUI_API_BASE_KEY__ = KEY;
+			})();
+		</script>
+		<!-- LICENSE covers this Open WebUI branding surface, including name, logo,
+		visual, textual, symbolic identifiers, metadata, and surrounding UI.
+		Do not alter, remove, obscure, or replace it except as LICENSE permits:
+		https://docs.openwebui.com/license. -->
+		<link rel="icon" type="image/png" href="/static/favicon.png" crossorigin="use-credentials" />
+		<link
+			rel="icon"
+			type="image/png"
+			href="/static/favicon-96x96.png"
+			sizes="96x96"
+			crossorigin="use-credentials"
+		/>
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href="/static/favicon.svg"
+			crossorigin="use-credentials"
+		/>
+		<link rel="shortcut icon" href="/static/favicon.ico" crossorigin="use-credentials" />
+		<link
+			rel="apple-touch-icon"
+			sizes="180x180"
+			href="/static/apple-touch-icon.png"
+			crossorigin="use-credentials"
+		/>
+		<link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+		/>
+		<meta name="theme-color" content="#171717" />
+		<meta name="robots" content="noindex,nofollow" />
+
+		<script src="/static/loader.js" defer crossorigin="use-credentials"></script>
+		<link rel="stylesheet" href="/static/custom.css" crossorigin="use-credentials" />
+
+		<script>
+			function resizeIframe(obj) {
+				obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px';
+			}
+		</script>
+
+		<script>
+			// On page load or when changing themes, best to add inline in `head` to avoid FOUC
+			(() => {
+				const metaThemeColorTag = document.querySelector('meta[name="theme-color"]');
+				const prefersDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+				if (!localStorage?.theme) {
+					localStorage.theme = 'system';
+				}
+
+				if (localStorage.theme === 'system') {
+					document.documentElement.classList.add(prefersDarkTheme ? 'dark' : 'light');
+					metaThemeColorTag.setAttribute('content', prefersDarkTheme ? '#171717' : '#ffffff');
+				} else if (localStorage.theme === 'oled-dark') {
+					document.documentElement.style.setProperty('--color-gray-800', '#101010');
+					document.documentElement.style.setProperty('--color-gray-850', '#050505');
+					document.documentElement.style.setProperty('--color-gray-900', '#000000');
+					document.documentElement.style.setProperty('--color-gray-950', '#000000');
+					document.documentElement.classList.add('dark');
+					metaThemeColorTag.setAttribute('content', '#000000');
+				} else if (localStorage.theme === 'light') {
+					document.documentElement.classList.add('light');
+					metaThemeColorTag.setAttribute('content', '#ffffff');
+				} else if (localStorage.theme === 'her') {
+					document.documentElement.classList.add('her');
+					metaThemeColorTag.setAttribute('content', '#983724');
+				} else {
+					document.documentElement.classList.add('dark');
+					metaThemeColorTag.setAttribute('content', '#171717');
+				}
+
+				// LICENSE covers these Open WebUI splash logo assets.
+				// Do not alter, remove, obscure, or replace them except as LICENSE permits:
+				// https://docs.openwebui.com/license.
+				const preloadHref = document.documentElement.classList.contains('dark')
+					? '/static/splash-dark.png'
+					: '/static/splash.png';
+				const preload = document.createElement('link');
+				preload.rel = 'preload';
+				preload.as = 'image';
+				preload.href = preloadHref;
+				preload.setAttribute('fetchpriority', 'high');
+				document.head.appendChild(preload);
+
+				window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
+					if (localStorage.theme === 'system') {
+						if (e.matches) {
+							document.documentElement.classList.add('dark');
+							document.documentElement.classList.remove('light');
+							metaThemeColorTag.setAttribute('content', '#171717');
+						} else {
+							document.documentElement.classList.add('light');
+							document.documentElement.classList.remove('dark');
+							metaThemeColorTag.setAttribute('content', '#ffffff');
+						}
+					}
+				});
+				const isDarkMode = document.documentElement.classList.contains('dark');
+
+				const logo = document.createElement('img');
+				logo.id = 'logo';
+				logo.style =
+					'position: absolute; width: auto; height: 6rem; top: 44%; left: 50%; transform: translateX(-50%); display:block;';
+				logo.loading = 'eager';
+				logo.fetchPriority = 'high';
+				// LICENSE covers this Open WebUI splash logo.
+				// Do not alter, remove, obscure, or replace it except as LICENSE permits:
+				// https://docs.openwebui.com/license.
+				logo.src = isDarkMode ? '/static/splash-dark.png' : '/static/splash.png';
+				logo.alt = '';
+
+				document.addEventListener('DOMContentLoaded', function () {
+					const splash = document.getElementById('splash-screen');
+					if (document.documentElement.classList.contains('her')) {
+						return;
+					}
+
+					if (splash) splash.prepend(logo);
+				});
+			})();
+		</script>
+
+		<title>Open WebUI</title>
+
+		<link href="/_app/immutable/entry/start.D-hUtyFl.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BGO04Q2J.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/dIXeA9lP.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DIeogL5L.js" rel="modulepreload">
+		<link href="/_app/immutable/entry/app.COGThZkb.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/C1FmrZbK.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BEykIZg9.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CWj6FrbW.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/JnN8Fbid.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/eACjpTvy.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BSgUVPbd.js" rel="modulepreload">
+		<link href="/_app/immutable/nodes/0.Bx1nwWM1.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/69_IOA4Y.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/C3dJyZpp.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BzDArRrq.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/C9Eptv6-.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DZaXKDub.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/SYmKJpIj.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/MKUKL7Jz.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BVRWb7LA.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DspJw8I4.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DMcux6Sp.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/D4c2G9Wl.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Cd8jYfUX.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BBlkFYIG.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BtmPRyUI.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/B2185GOa.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BT28bLwl.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/QjJsDpFa.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DpNq3HGC.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BHEdJRzp.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/B0xt6c5q.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/4cRjHV7S.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CpU-fR91.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CtSSu3Ff.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Cojxxu7g.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BrgnA05u.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/w44vz4EI.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Bfc47y5P.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/C8DTDulS.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/d9tc8ATt.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Zq-ZUAx5.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/1gFx06MA.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/k8GUwV6G.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/2rugLFd4.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CfaZqEXD.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/H9ZA3PAq.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BKT2lxQy.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BA4C0bvA.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Cp4iGXfv.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/IYsSsAPq.js" rel="modulepreload">
+		
+		<link href="/_app/immutable/assets/Toaster.DKF17Rty.css" rel="stylesheet">
+		<link href="/_app/immutable/assets/Modal.CSlFhZkq.css" rel="stylesheet">
+		<link href="/_app/immutable/assets/0.DbT5Auix.css" rel="stylesheet">
+	</head>
+
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
+			<script>
+				{
+					__sveltekit_1nvxwn6 = {
+						base: ""
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/_app/immutable/entry/start.D-hUtyFl.js"),
+						import("/_app/immutable/entry/app.COGThZkb.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
+
+		<div
+			id="splash-screen"
+			style="position: fixed; z-index: 100; top: 0; left: 0; width: 100%; height: 100%"
+		>
+			<style type="text/css" nonce="">
+				html {
+					overflow-y: scroll !important;
+				}
+			</style>
+
+			<div
+				style="
+					position: absolute;
+					top: 33%;
+					left: 50%;
+
+					width: 24rem;
+					transform: translateX(-50%);
+
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+				"
+			>
+				<!-- LICENSE covers this Open WebUI splash logo.
+				Do not alter, remove, obscure, or replace it except as LICENSE permits:
+				https://docs.openwebui.com/license. -->
+				<img
+					id="logo-her"
+					alt=""
+					style="width: auto; height: 13rem"
+					src="/static/splash.png"
+					loading="eager"
+					fetchpriority="high"
+					class="animate-pulse-fast"
+				/>
+
+				<div style="position: relative; width: 24rem; margin-top: 0.5rem">
+					<div
+						id="progress-background"
+						style="
+							position: absolute;
+							width: 100%;
+							height: 0.75rem;
+
+							border-radius: 9999px;
+							background-color: #fafafa9a;
+						"
+					></div>
+
+					<div
+						id="progress-bar"
+						style="
+							position: absolute;
+							width: 0%;
+							height: 0.75rem;
+							border-radius: 9999px;
+							background-color: #fff;
+						"
+						class="bg-white"
+					></div>
+				</div>
+			</div>
+
+			<!-- <span style="position: absolute; bottom: 32px; left: 50%; margin: -36px 0 0 -36px">
+				Footer content
+			</span> -->
+		</div>
+
+		<!-- STATIC-DEPLOY PATCH (not part of upstream Open WebUI):
+		     runtime selector for the backend API this static page talks to,
+		     including a local API running on the visitor's machine. -->
+		<div id="owui-api-fab" title="Backend API settings" aria-label="Backend API settings">
+			<span id="owui-api-fab-dot" title="No backend configured"></span>
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+				stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<circle cx="12" cy="12" r="3"></circle>
+				<path
+					d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+			</path>
+			</svg>
+		</div>
+
+		<div id="owui-api-panel" hidden>
+			<div class="owui-api-head">Backend API</div>
+			<p class="owui-api-note">
+				Static build: the UI has no server of its own. Point it at any Open&nbsp;WebUI backend -
+				your local one (<code>http://localhost:8080</code>), a LAN host
+				(<code>http://192.168.1.10:8080</code>), or a remote server. Leave empty to use this site
+				itself (requires a backend behind it). The value is stored in your browser
+				(localStorage) or passed once via <code>?api=</code>.
+			</p>
+			<input id="owui-api-input" type="text" spellcheck="false"
+				placeholder="https://your-backend.example.com" autocomplete="off" />
+			<div id="owui-api-status" class="owui-api-status" aria-live="polite"></div>
+			<div class="owui-api-actions">
+				<button id="owui-api-save" class="owui-api-btn primary" type="button">Save &amp; reload</button>
+				<button id="owui-api-test" class="owui-api-btn" type="button">Test</button>
+				<button id="owui-api-clear" class="owui-api-btn" type="button">Reset</button>
+			</div>
+		</div>
+
+		<style type="text/css" nonce="">
+			#owui-api-fab {
+				position: fixed;
+				right: 18px;
+				bottom: 18px;
+				z-index: 2147483000;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 10px 12px;
+				border-radius: 9999px;
+				background: rgba(17, 17, 17, 0.92);
+				color: #fff;
+				font: 500 12px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+				box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+				cursor: pointer;
+				user-select: none;
+				border: 1px solid rgba(255, 255, 255, 0.18);
+			}
+			#owui-api-fab:hover {
+				background: rgba(38, 38, 38, 0.97);
+			}
+			#owui-api-fab-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: #9ca3af;
+			}
+			#owui-api-fab-dot.connected {
+				background: #22c55e;
+				box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
+			}
+			#owui-api-fab-dot.broken {
+				background: #f59e0b;
+			}
+			#owui-api-panel {
+				position: fixed;
+				right: 18px;
+				bottom: 74px;
+				z-index: 2147483001;
+				width: min(360px, calc(100vw - 36px));
+				padding: 16px;
+				border-radius: 14px;
+				background: #111827;
+				color: #f3f4f6;
+				font: 400 13px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+				box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+				border: 1px solid rgba(255, 255, 255, 0.12);
+			}
+			#owui-api-panel[hidden] {
+				display: none;
+			}
+			#owui-api-panel .owui-api-head {
+				font-size: 14px;
+				font-weight: 600;
+				margin-bottom: 8px;
+			}
+			#owui-api-panel .owui-api-note {
+				margin: 0 0 10px;
+				font-size: 12px;
+				color: #d1d5db;
+			}
+			#owui-api-panel code {
+				font-family: ui-monospace, Consolas, monospace;
+				font-size: 11px;
+				background: rgba(255, 255, 255, 0.1);
+				padding: 1px 4px;
+				border-radius: 4px;
+			}
+			#owui-api-input {
+				width: 100%;
+				box-sizing: border-box;
+				padding: 9px 10px;
+				border-radius: 8px;
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				background: #0b1220;
+				color: #f9fafb;
+				font: 400 13px/1.2 ui-monospace, Consolas, monospace;
+				outline: none;
+			}
+			#owui-api-input:focus {
+				border-color: #60a5fa;
+			}
+			#owui-api-status {
+				min-height: 18px;
+				margin-top: 8px;
+				font-size: 12px;
+				color: #9ca3af;
+				word-break: break-all;
+			}
+			#owui-api-status.ok {
+				color: #4ade80;
+			}
+			#owui-api-status.err {
+				color: #fbbf24;
+			}
+			#owui-api-panel .owui-api-actions {
+				display: flex;
+				gap: 8px;
+				margin-top: 10px;
+				flex-wrap: wrap;
+			}
+			.owui-api-btn {
+				padding: 8px 12px;
+				border-radius: 9999px;
+				border: 1px solid rgba(255, 255, 255, 0.25);
+				background: transparent;
+				color: #f3f4f6;
+				font: 500 12px/1 system-ui, sans-serif;
+				cursor: pointer;
+			}
+			.owui-api-btn:hover {
+				background: rgba(255, 255, 255, 0.12);
+			}
+			.owui-api-btn.primary {
+				background: #2563eb;
+				border-color: #2563eb;
+			}
+			.owui-api-btn.primary:hover {
+				background: #1d4ed8;
+			}
+		</style>
+
+		<script>
+			(function () {
+				var KEY = 'owui_api_base';
+				var fab, panel, input, status, dot;
+
+				function current() {
+					try {
+						return (localStorage.getItem(KEY) || '').replace(/\/+$/, '');
+					} catch (e) {
+						return '';
+					}
+				}
+
+				function normalize(value) {
+					return (value || '').trim().replace(/\/+$/, '');
+				}
+
+				function setStatus(text, kind) {
+					if (!status) return;
+					status.textContent = text;
+					status.className = 'owui-api-status' + (kind ? ' ' + kind : '');
+				}
+
+				function mark(base, state) {
+					if (!dot) return;
+					dot.className = state === 'ok' ? 'connected' : state === 'bad' ? 'broken' : '';
+					dot.title = base ? 'Backend: ' + base : 'No backend configured (using this site)';
+				}
+
+				function boot() {
+					fab = document.getElementById('owui-api-fab');
+					panel = document.getElementById('owui-api-panel');
+					input = document.getElementById('owui-api-input');
+					status = document.getElementById('owui-api-status');
+					dot = document.getElementById('owui-api-fab-dot');
+
+					var base = window.__OWUI_API_BASE__ || current();
+					input.value = base;
+					mark(base, base ? '' : '');
+					setStatus(
+						base ? 'Active backend: ' + base : 'Using this page as backend (static demo).',
+						''
+					);
+
+					fab.addEventListener('click', function () {
+						panel.hidden = !panel.hidden;
+						if (!panel.hidden) input.focus();
+					});
+
+					document.getElementById('owui-api-save').addEventListener('click', function () {
+						var value = normalize(input.value);
+						try {
+							if (value) localStorage.setItem(KEY, value);
+							else localStorage.removeItem(KEY);
+						} catch (e) {}
+						location.reload();
+					});
+
+					document.getElementById('owui-api-clear').addEventListener('click', function () {
+						try {
+							localStorage.removeItem(KEY);
+						} catch (e) {}
+						location.reload();
+					});
+
+					document.getElementById('owui-api-test').addEventListener('click', function () {
+						var value = normalize(input.value);
+						var target = (value || location.origin) + '/api/config';
+						setStatus('Testing ' + target + ' ...', '');
+						var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+						var timer = ctrl ? setTimeout(function () {
+							ctrl.abort();
+						}, 8000) : null;
+						fetch(target, {
+							method: 'GET',
+							credentials: 'include',
+							cache: 'no-store',
+							signal: ctrl ? ctrl.signal : undefined
+						})
+							.then(function (res) {
+								if (timer) clearTimeout(timer);
+								if (!res.ok) throw new Error('HTTP ' + res.status);
+								return res.json().catch(function () {
+									return {};
+								});
+							})
+							.then(function (json) {
+								var name = json && (json.name || json.version);
+								mark(value, 'ok');
+								setStatus(
+									'OK - backend reachable' + (name ? ' (' + name + ')' : '') + '.',
+									'ok'
+								);
+							})
+							.catch(function (err) {
+								if (timer) clearTimeout(timer);
+								mark(value, 'bad');
+								setStatus(
+									'Failed: ' +
+										(err && err.message ? err.message : err) +
+										'. Check the URL, that the backend is running, that it allows this origin (CORS) and that an HTTPS page only calls http:// hosts it can reach.',
+									'err'
+								);
+							});
+					});
+
+					document.addEventListener('keydown', function (e) {
+						if (e.key === 'Escape' && !panel.hidden) panel.hidden = true;
+					});
+				}
+
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', boot);
+				} else {
+					boot();
+				}
+			})();
+		</script>
+	</body>
+
+	<style type="text/css" nonce="">
+		html {
+			overflow-y: hidden !important;
+			overscroll-behavior-y: none;
+		}
+
+		#splash-screen {
+			background: #fff;
+		}
+
+		html.dark #splash-screen {
+			background: #000;
+		}
+
+		html.her #splash-screen {
+			background: #983724;
+		}
+
+		#logo-her {
+			display: none;
+		}
+
+		#progress-background {
+			display: none;
+		}
+
+		#progress-bar {
+			display: none;
+		}
+
+		html.her #logo {
+			display: none;
+		}
+
+		html.her #logo-her {
+			display: block;
+			filter: invert(1);
+		}
+
+		html.her #progress-background {
+			display: block;
+		}
+
+		html.her #progress-bar {
+			display: block;
+		}
+
+		@media (max-width: 24rem) {
+			html.her #progress-background {
+				display: none;
+			}
+
+			html.her #progress-bar {
+				display: none;
+			}
+		}
+
+		@keyframes pulse {
+			50% {
+				opacity: 0.65;
+			}
+		}
+
+		.animate-pulse-fast {
+			animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+		}
+	</style>
+</html>
